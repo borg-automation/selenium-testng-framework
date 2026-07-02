@@ -1,0 +1,17 @@
+<!DOCTYPE suite SYSTEM "https://testng.org/testng-1.0.dtd">
+<suite name="SeleniumTestNGFrameworkSuite" parallel="methods" thread-count="3">
+    <!-- parallel="classes" thread-count="3" would instead give each <class> its own thread,
+         while the @Test methods inside a single class still run sequentially on that thread.
+         parallel="methods" (used here) runs every @Test method on its own thread regardless
+         of which class it belongs to, which is the finer-grained option and what this suite
+         needs to prove method-level parallel safety. -->
+    <listeners>
+        <listener class-name="io.github.borgautomation.listeners.TestListener"/>
+        <listener class-name="io.github.borgautomation.listeners.AnnotationTransformer"/>
+    </listeners>
+    <test name="SauceDemoTests">
+        <classes>
+            <class name="io.github.borgautomation.tests.SauceDemoLoginTest"/>
+        </classes>
+    </test>
+</suite>
