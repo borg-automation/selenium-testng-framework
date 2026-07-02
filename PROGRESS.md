@@ -1,5 +1,28 @@
 # Progress Log
 
+## Session 3 — GitHub Actions CI
+
+No brief document for this one (no `Claude/BRIEF_*.md`); scoped from the "Out" notes in
+Sessions 1 and 2, which both explicitly deferred GitHub Actions.
+
+- `.github/workflows/ci.yml`: runs on push/PR to `main`/`master`, JDK 21 (temurin), Maven
+  dependency cache, `mvn test -Dheadless=true`. Uploads `test-output/ExtentReports/`,
+  `logs/`, and `target/surefire-reports/` as artifacts on every run (`if: always()`), so a
+  failed CI run is debuggable without rerunning locally.
+- Added headless support, which Session 1 explicitly deferred as "a CI-session concern":
+  `ConfigReader.isHeadless()` (system property `headless`, default `false` from
+  `config.properties`) and `DriverFactory` now adds `--headless=new --no-sandbox
+  --disable-dev-shm-usage --window-size=1920,1080` (Chrome) / `-headless --width=1920
+  --height=1080` (Firefox) when enabled. Default stays `false` so local `mvn test` still
+  shows real browser windows, unchanged from Session 1; CI passes `-Dheadless=true`
+  explicitly.
+- Verified locally with `mvn test -Dheadless=true` before pushing (no visible Chrome windows,
+  `logs/automation.log` confirms `headless=true` on every driver creation, suite passed).
+  `ubuntu-latest` ships `google-chrome-stable` preinstalled, so WebDriverManager resolves a
+  matching chromedriver the same way it does locally — no extra browser-install step needed.
+- README's CI badge (added in the prior commit as a placeholder pointing at `ci.yml`) now
+  resolves to a real workflow.
+
 ## Session 1 — Core framework + parallel execution
 
 Implemented per `Claude/BRIEF_selenium_core_parallel.md`: `DriverFactory` (ThreadLocal

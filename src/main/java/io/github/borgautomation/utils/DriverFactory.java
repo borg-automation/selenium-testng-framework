@@ -23,6 +23,7 @@ public class DriverFactory {
 
     public static void setDriver() {
         String browser = ConfigReader.getInstance().getBrowser().toLowerCase();
+        boolean headless = ConfigReader.getInstance().isHeadless();
         prepareDriverBinary(browser);
 
         // BiDi is opt-in but each ChromeDriver still advertises a CDP websocket that shares
@@ -41,11 +42,20 @@ public class DriverFactory {
                 case "chrome" -> {
                     ChromeOptions options = new ChromeOptions();
                     options.setCapability("webSocketUrl", false);
+                    if (headless) {
+                        // --no-sandbox/--disable-dev-shm-usage are CI-runner necessities (no
+                        // real /dev/shm sizing, often running as root), not local-dev concerns.
+                        options.addArguments("--headless=new", "--no-sandbox", "--disable-dev-shm-usage",
+                                "--window-size=1920,1080");
+                    }
                     yield new ChromeDriver(options);
                 }
                 case "firefox" -> {
                     FirefoxOptions options = new FirefoxOptions();
                     options.setCapability("webSocketUrl", false);
+                    if (headless) {
+                        options.addArguments("-headless", "--width=1920", "--height=1080");
+                    }
                     yield new FirefoxDriver(options);
                 }
                 default -> throw new IllegalArgumentException("Unsupported browser: " + browser);
@@ -53,7 +63,7 @@ public class DriverFactory {
         }
 
         DRIVER.set(webDriver);
-        log.info("Driver created for browser '{}'", browser);
+        log.info("Driver created for browser '{}' (headless={})", browser, headless);
     }
 
     // WebDriverManager.setup() resolves and writes the driver binary to a shared cache;
