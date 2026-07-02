@@ -4,7 +4,8 @@
 
 A Selenium + TestNG + Maven UI automation framework: ThreadLocal-safe parallel execution
 across local browser instances (no Grid/Docker), Page Object Model, Log4j2 logging,
-ExtentReports with screenshot-on-failure, and a retry analyzer for flaky tests.
+ExtentReports with screenshot-on-failure, a retry analyzer for flaky tests, and JSON/CSV-driven
+data providers.
 
 ## Stack
 
@@ -13,22 +14,26 @@ ExtentReports with screenshot-on-failure, and a retry analyzer for flaky tests.
 - WebDriverManager 6.1.0 (no manual driver binaries)
 - Log4j2 2.26.0
 - ExtentReports 5.1.2 (Spark reporter)
+- Jackson Databind 2.19.0 (JSON test data only; CSV uses plain `java.io`, no library)
 
 ## Project structure
 
 ```
 src/main/java/io/github/borgautomation/
-  pages/        Page Object classes (BasePage, LoginPage, InventoryPage)
-  utils/        DriverFactory, ConfigReader, ExtentManager, ScreenshotUtil
+  pages/           Page Object classes (BasePage, LoginPage, InventoryPage)
+  utils/           DriverFactory, ConfigReader, ExtentManager, ScreenshotUtil
 
 src/test/java/io/github/borgautomation/
-  tests/        BaseTest, SauceDemoLoginTest
-  listeners/    TestListener, RetryAnalyzer, AnnotationTransformer
+  tests/           BaseTest, SauceDemoLoginTest
+  listeners/       TestListener, RetryAnalyzer, AnnotationTransformer
+  dataproviders/   LoginDataProvider (JSON), AddToCartDataProvider (CSV)
+  models/          LoginTestData (JSON row POJO)
 
 src/test/resources/
   config.properties   browser, baseUrl, retryCount, etc.
   testng.xml          suite + parallel config + listener registration
   log4j2.xml          console + rolling file logging
+  testdata/           login-users.json, add-to-cart-products.csv
 ```
 
 ## Running the suite
@@ -71,4 +76,4 @@ Neither directory is committed (see `.gitignore`); both are regenerated on every
 ## Status / roadmap
 
 See `PROGRESS.md` for what's been verified so far, known environment caveats, and deviations
-from the original session plans. Not yet implemented: data providers, Cucumber.
+from the original session plans. Not yet implemented: Cucumber.

@@ -18,6 +18,7 @@
         <webdrivermanager.version>6.1.0</webdrivermanager.version>
         <log4j.version>2.26.0</log4j.version>
         <extentreports.version>5.1.2</extentreports.version>
+        <jackson.version>2.19.0</jackson.version>
     </properties>
 
     <dependencies>
@@ -50,6 +51,11 @@
             <groupId>com.aventstack</groupId>
             <artifactId>extentreports</artifactId>
             <version>${extentreports.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>${jackson.version}</version>
         </dependency>
     </dependencies>
 

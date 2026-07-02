@@ -22,7 +22,7 @@ public class RetryAnalyzer implements IRetryAnalyzer {
 
     @Override
     public boolean retry(ITestResult result) {
-        String methodName = result.getMethod().getMethodName();
+        String methodName = describeMethod(result);
         log.info("RetryAnalyzer instance {} evaluating '{}' after attempt {} (max retries {})",
                 System.identityHashCode(this), methodName, retryCount + 1, maxRetryCount);
 
@@ -62,5 +62,17 @@ public class RetryAnalyzer implements IRetryAnalyzer {
     private static String describe(ITestResult result) {
         Throwable throwable = result.getThrowable();
         return throwable != null ? throwable.getClass().getSimpleName() : "unknown reason";
+    }
+
+    // Mirrors TestListener.buildTestName() - a data-driven method's rows all share one
+    // method name, so the first parameter (username / product name) is what actually
+    // identifies which row this retry decision belongs to.
+    private static String describeMethod(ITestResult result) {
+        String baseName = result.getMethod().getMethodName();
+        Object[] params = result.getParameters();
+        if (params != null && params.length > 0 && params[0] != null) {
+            return baseName + " [" + params[0] + "]";
+        }
+        return baseName;
     }
 }

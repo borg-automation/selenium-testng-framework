@@ -30,17 +30,30 @@ public class TestListener implements ITestListener {
                 && ExtentManager.getTest() != null;
 
         if (retryReinvocation) {
-            log.info("Re-invoking '{}' for retry attempt {}", result.getMethod().getMethodName(),
+            log.info("Re-invoking '{}' for retry attempt {}", buildTestName(result),
                     ((RetryAnalyzer) analyzer).getRetryCount());
             return;
         }
 
-        ExtentTest test = ExtentManager.getInstance().createTest(result.getMethod().getMethodName());
+        ExtentTest test = ExtentManager.getInstance().createTest(buildTestName(result));
         if (result.getParameters() != null && result.getParameters().length > 0) {
             test.info("Parameters: " + Arrays.toString(result.getParameters()));
         }
         ExtentManager.setTest(test);
-        log.info("Test started: {}", result.getMethod().getMethodName());
+        log.info("Test started: {}", buildTestName(result));
+    }
+
+    // Every row from a @DataProvider invokes the same method name, so without this all rows
+    // would render as identical, indistinguishable report entries. Appending the first
+    // parameter's toString() (username for the JSON provider, product name for the CSV one)
+    // gives each row a name a reviewer can actually tell apart.
+    private static String buildTestName(ITestResult result) {
+        String baseName = result.getMethod().getMethodName();
+        Object[] params = result.getParameters();
+        if (params != null && params.length > 0 && params[0] != null) {
+            return baseName + " [" + params[0] + "]";
+        }
+        return baseName;
     }
 
     @Override
@@ -49,7 +62,7 @@ public class TestListener implements ITestListener {
         if (test != null) {
             test.pass("Test passed");
         }
-        log.info("Test passed: {}", result.getMethod().getMethodName());
+        log.info("Test passed: {}", buildTestName(result));
         ExtentManager.removeTest();
     }
 
@@ -65,7 +78,7 @@ public class TestListener implements ITestListener {
                 test.fail(result.getThrowable());
             }
         }
-        log.error("Test failed: {}", result.getMethod().getMethodName(), result.getThrowable());
+        log.error("Test failed: {}", buildTestName(result), result.getThrowable());
         ExtentManager.removeTest();
     }
 
@@ -82,7 +95,7 @@ public class TestListener implements ITestListener {
                 && retryAnalyzer.getRetryCount() <= retryAnalyzer.getMaxRetryCount();
 
         if (pendingRetry) {
-            log.info("Intermediate retry skip for '{}' - another attempt follows", result.getMethod().getMethodName());
+            log.info("Intermediate retry skip for '{}' - another attempt follows", buildTestName(result));
             return;
         }
 
@@ -91,7 +104,7 @@ public class TestListener implements ITestListener {
             Throwable throwable = result.getThrowable();
             test.log(Status.SKIP, throwable != null ? throwable.getMessage() : "Test skipped");
         }
-        log.warn("Test skipped: {}", result.getMethod().getMethodName());
+        log.warn("Test skipped: {}", buildTestName(result));
         ExtentManager.removeTest();
     }
 

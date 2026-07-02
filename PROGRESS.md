@@ -1,5 +1,78 @@
 # Progress Log
 
+## Session 4 — Data providers (JSON + CSV)
+
+Implemented per `Claude/BRIEF_data_providers.md`: `jackson-databind` for JSON, plain
+`BufferedReader` for CSV (no CSV library, per the brief's ground rule), `LoginTestData` POJO,
+`LoginDataProvider` (JSON) and `AddToCartDataProvider` (CSV) under a new `dataproviders`
+package.
+
+### Second scenario choice: add-to-cart with different products, not checkout
+
+Section 4 asked for "whichever is already closest to what Session 1's InventoryPage/checkout
+coverage supports." Session 1 only built `InventoryPage` — no `CheckoutPage` exists, and the
+brief's "Out" section explicitly excludes new page objects. Checkout field validation would
+have needed a new page object; add-to-cart with different products needed nothing beyond
+`InventoryPage.addItemToCart(String)` and `getCartBadgeCount()`, both already there. Chose
+4 real SauceDemo products (`testdata/add-to-cart-products.csv`: productName,
+addToCartButtonId, expectedCartBadgeCount) over checkout for that reason alone.
+
+### Login tests: rewritten, not added alongside
+
+The brief left this as a choice ("Rewrite (or add, if the Session 1 test still needs to
+stand alone)"). Session 1's three hardcoded tests (`validLogin_inventoryLoads`,
+`invalidLogin_showsError`, `lockedOutUser_showsError`) covered exactly the same three
+scenarios the JSON provider now covers, plus the JSON provider adds a fourth
+(`problem_user`) for free. Keeping both would have meant duplicate coverage of identical
+scenarios and contradicted the brief's own stated goal ("the data drives the assertion, the
+test method stays generic"), so the three were replaced by one `login(LoginTestData)` test.
+`validLogin_addToCart_cartBadgeUpdates` (Session 1, single hardcoded product) was left
+untouched — it isn't a login-outcome test and the brief didn't ask for it to be touched.
+
+### Parallelism decision (Section 5)
+
+Left `@DataProvider(parallel = true)` off, per the brief's explicit direction. Verified
+concretely rather than just trusting the reasoning on paper: `logs/automation.log` shows all
+9 test/row combinations (4 login rows + 1 static add-to-cart + 4 CSV rows) dispatched across
+exactly 3 `TestNG-test-SauceDemoTests-N` threads — the same thread-pool that Session 1's
+`thread-count="3"` already governs, no extra threads spawned by the data providers. Total
+concurrent browser count stayed bounded at 3, not 3×4.
+
+### A correctness question the brief didn't ask, but the report-naming fix in Session 2 made relevant: is `RetryAnalyzer`/`ExtentTest`-node state shared across data-provider rows?
+
+Not assumed — checked directly, since Session 2's report-node-reuse logic
+(`onTestStart`/`onTestSkipped` in `TestListener`) keys off `RetryAnalyzer.getRetryCount()` on
+the instance returned by `result.getMethod().getRetryAnalyzer(result)`. If TestNG reused one
+`ITestNGMethod`/retry-analyzer across all rows of a data-driven method, a retry on row 2 would
+corrupt row 3's report node (wrong reuse-vs-create decision) or bleed retry-state into it. In
+a run where only one row (`addToCart_variousProducts [Sauce Labs Bolt T-Shirt]`) needed
+retries (2 of them, same `RetryAnalyzer` instance both times, consistent with the Session 2
+finding), the very next row dispatched on that same thread
+(`addToCart_variousProducts [Sauce Labs Fleece Jacket]`) rendered as a clean, separate report
+node with zero "Retrying"/"exhausted" text bleeding into it. TestNG clones the test method
+(and therefore the cached retry analyzer) per data-provider row — confirmed empirically for
+TestNG 7.11.0, not just assumed from documentation.
+
+### Report naming fix (applies beyond this session's tests)
+
+`TestListener` created every `ExtentTest` node from the bare method name, so every row of a
+data-driven method rendered as identical, indistinguishable entries (e.g. four nodes all
+named `login`). Fixed by appending the first parameter's `toString()` to the node name
+(`login [standard_user]`, `addToCart_variousProducts [Sauce Labs Backpack]`, etc.) — this is
+why `LoginTestData.toString()` returns `username` rather than the default `Object.toString()`.
+`RetryAnalyzer`'s log lines got the same treatment so a retry on a specific row is
+identifiable in `logs/automation.log`, not just "retrying login" with no row indicated.
+
+### Known environment flakiness, amplified
+
+Session 2 already documented this machine needing 1-2 retries per parallel run under 3-way
+Chrome contention. Adding 5 more test/row invocations (9 total vs. 4) increased contention
+enough that one run fully exhausted retries on `validLogin_addToCart_cartBadgeUpdates`
+(2 `TimeoutException`s, then a real failure) before an immediate re-run passed clean. This is
+the same documented cause, not a new bug — see Session 2's note. Not treated as a signal to
+change `thread-count` or `retryCount`, per that same note and the brief's explicit ground
+rule not to revisit the parallelism decision without documenting new reasoning first.
+
 ## Session 3 — GitHub Actions CI
 
 No brief document for this one (no `Claude/BRIEF_*.md`); scoped from the "Out" notes in
