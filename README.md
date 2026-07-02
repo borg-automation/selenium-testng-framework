@@ -1,8 +1,6 @@
 # selenium-testng-framework
 
 [![CI](https://github.com/borg-automation/selenium-testng-framework/actions/workflows/ci.yml/badge.svg)](https://github.com/borg-automation/selenium-testng-framework/actions/workflows/ci.yml)
-<!-- Badge is a placeholder until the ci.yml workflow is added (tracked as a follow-up session);
-     it will start rendering pass/fail automatically once that workflow exists. -->
 
 A Selenium + TestNG + Maven UI automation framework: ThreadLocal-safe parallel execution
 across local browser instances (no Grid/Docker), Page Object Model, Log4j2 logging,
@@ -68,9 +66,9 @@ Neither directory is committed (see `.gitignore`); both are regenerated on every
 | `baseUrl` | `https://www.saucedemo.com/` | |
 | `implicitWaitSeconds` | `0` | Reserved; the framework uses explicit waits only |
 | `retryCount` | `2` | Max retries per test via `RetryAnalyzer` |
+| `headless` | `false` | Overridable via `-Dheadless=true`; CI always sets this |
 
 ## Status / roadmap
 
 See `PROGRESS.md` for what's been verified so far, known environment caveats, and deviations
-from the original session plans. Not yet implemented: GitHub Actions CI, data providers,
-Cucumber.
+from the original session plans. Not yet implemented: data providers, Cucumber.
